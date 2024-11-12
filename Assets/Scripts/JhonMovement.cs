@@ -1,24 +1,34 @@
+using Unity.Mathematics;
 using UnityEngine;
 public class NewBehaviourScript : MonoBehaviour
 {
+    public GameObject BulletPrefab;
     private Rigidbody2D Rigidbody2D;
     private float Horizontal;
-    
     public float Speed;
     public float JumpForce;
-
     private bool Grounded;
     private int jumpCount = 0;  // Contador de saltos
     public int maxJumps = 1;    // Máximo número de saltos permitidos
+    //Parte 3
+    private Animator Animator;
+    
+    private float LastShoot; //Para calcular el tiempo del ultimo disparo
 
     void Start()
     {
         Rigidbody2D = GetComponent<Rigidbody2D>();
+        Animator = GetComponent<Animator>();
     }
 
     void Update()
     {
         Horizontal = Input.GetAxis("Horizontal");
+
+        if(Horizontal <0.0f) transform.localScale = new Vector3(-1.0f, 1.0f, 1.0f);
+        else if(Horizontal > 0.0f) transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+
+        Animator.SetBool("running", Horizontal!=0.0f);
 
         Debug.DrawRay(transform.position, Vector3.down * 0.1f, Color.red);
         if(Physics2D.Raycast(transform.position, Vector3.down, 0.1f))
@@ -37,6 +47,18 @@ public class NewBehaviourScript : MonoBehaviour
             Jump();
             jumpCount++; // Incrementamos el contador de saltos
         }
+        if (Input.GetKey(KeyCode.Space) && Time.time > LastShoot + 0.25f){
+            Shoot();
+            LastShoot = Time.time;
+        }
+    }
+
+    private void Shoot(){
+        Vector3 direction;
+        if (transform.localScale.x == 1.0f) direction = Vector2.right;
+        else direction = Vector2.left;
+        GameObject bullet = Instantiate(BulletPrefab, transform.position + direction *0.1f, quaternion.identity);
+        bullet.GetComponent<BulletScript>().SetDirection(direction);
     }
 
     private void Jump()
