@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 using UnityEngine;
-public class NewBehaviourScript : MonoBehaviour
+public class JohnMovement  : MonoBehaviour
 {
     public GameObject BulletPrefab;
     private Rigidbody2D Rigidbody2D;
@@ -14,6 +14,7 @@ public class NewBehaviourScript : MonoBehaviour
     private Animator Animator;
     
     private float LastShoot; //Para calcular el tiempo del ultimo disparo
+    private int health = 5;
 
     void Start()
     {
@@ -70,5 +71,12 @@ public class NewBehaviourScript : MonoBehaviour
     private void FixedUpdate()
     {
         Rigidbody2D.velocity = new Vector2(Horizontal * Speed, Rigidbody2D.velocity.y);
+    }
+    public void Hit(){
+        health--;
+        if(health <= 0)
+        {
+            Destroy(gameObject);
+        }
     }
 }
