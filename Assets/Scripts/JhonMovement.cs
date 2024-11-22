@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 using UnityEngine;
-public class JohnMovement  : MonoBehaviour
+public class JohnMovement : MonoBehaviour
 {
     public GameObject BulletPrefab;
     private Rigidbody2D Rigidbody2D;
@@ -14,16 +14,28 @@ public class JohnMovement  : MonoBehaviour
     private Animator Animator;
     
     private float LastShoot; //Para calcular el tiempo del ultimo disparo
-    private int health = 5;
+    public int health = 5;
+    public int maxHealth = 5;   // Vida máxima
+    private float healTimer = 0f; // Temporizador para la curación
+    private float healInterval = 3f; // Intervalo de curación en segundos
 
     void Start()
     {
         Rigidbody2D = GetComponent<Rigidbody2D>();
         Animator = GetComponent<Animator>();
+        health = maxHealth; // Iniciamos con vida completa
     }
 
     void Update()
     {
+        // Sistema de curación automática
+        healTimer += Time.deltaTime;
+        if (healTimer >= healInterval)
+        {
+            healTimer = 0f; // Reinicia el temporizador
+            Heal(); // Cura al personaje
+        }
+
         Horizontal = Input.GetAxis("Horizontal");
 
         if(Horizontal <0.0f) transform.localScale = new Vector3(-1.0f, 1.0f, 1.0f);
@@ -72,6 +84,17 @@ public class JohnMovement  : MonoBehaviour
     {
         Rigidbody2D.velocity = new Vector2(Horizontal * Speed, Rigidbody2D.velocity.y);
     }
+
+    // Nuevo método para curar
+    private void Heal()
+    {
+        if (health < maxHealth)
+        {
+            health = maxHealth;
+            Debug.Log("¡Curación completa!"); // Opcional: para debug
+        }
+    }
+
     public void Hit(){
         health--;
         if(health <= 0)

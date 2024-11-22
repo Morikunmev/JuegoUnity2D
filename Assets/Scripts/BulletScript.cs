@@ -5,12 +5,16 @@ using UnityEngine;
 
 public class BulletScript : MonoBehaviour
 {
+    public AudioClip Sound;
     public float Speed;
+    public float volumen = 0.3f; // Añade esta variable para controlar el volumen (0.0f a 1.0f)
+
     private Rigidbody2D Rigidbody2D;
     private Vector2 Direction;
     void Start()
     {
         Rigidbody2D = GetComponent<Rigidbody2D>();
+        Camera.main.GetComponent<AudioSource>().PlayOneShot(Sound, volumen); // Añadido el parámetro de volumen
         
     }
     private void FixedUpdate(){
