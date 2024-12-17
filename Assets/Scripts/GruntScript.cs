@@ -6,6 +6,9 @@ public class GruntScript : MonoBehaviour
     public GameObject BulletPrefab;
     public Vector3 enemyScale = new Vector3(1.0f, 1.0f, 1.0f);
     public LayerMask obstacleLayer;
+    public float detectionDistance = 8f;
+    public float shootDistance = 8f;
+    
     private float LastShoot;
     private int health = 3;
     public float speed = 3f;
@@ -16,6 +19,7 @@ public class GruntScript : MonoBehaviour
     private float scaleX;
     private Animator animator;
     private bool isDead = false;
+    private float raycastDistance;
 
     void Start()
     {
@@ -23,6 +27,7 @@ public class GruntScript : MonoBehaviour
         animator = GetComponent<Animator>();
         transform.localScale = enemyScale;
         scaleX = enemyScale.x;
+        raycastDistance = 1f * Mathf.Max(enemyScale.x, enemyScale.y);
         
         if (John == null)
         {
@@ -45,7 +50,7 @@ public class GruntScript : MonoBehaviour
 
         CheckForObstacles();
 
-        if (distance < 1.0f && Time.time > LastShoot + 0.25f)
+        if (distance < shootDistance && Time.time > LastShoot + 0.25f)
         {
             Shoot();
             LastShoot = Time.time;
@@ -53,14 +58,14 @@ public class GruntScript : MonoBehaviour
 
         Vector2 movement = new Vector2(0, rb2d.velocity.y);
         
-        if (distance > 1.0f)
+        if (distance > shootDistance)
         {
             movement.x = direction.x > 0 ? speed : -speed;
         }
 
         if (shouldJump && isGrounded)
         {
-            movement.y = jumpForce;
+            movement.y = jumpForce * Mathf.Max(enemyScale.x, enemyScale.y);
             isGrounded = false;
             shouldJump = false;
         }
@@ -71,8 +76,9 @@ public class GruntScript : MonoBehaviour
     void CheckForObstacles()
     {
         Vector2 rayDirection = transform.localScale.x > 0 ? Vector2.right : Vector2.left;
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, rayDirection, 1f, obstacleLayer);
-        Debug.DrawRay(transform.position, rayDirection * 1f, Color.red);
+        Vector2 rayStart = transform.position + new Vector3(0, -enemyScale.y * 0.25f, 0);
+        RaycastHit2D hit = Physics2D.Raycast(rayStart, rayDirection, raycastDistance, obstacleLayer);
+        Debug.DrawRay(rayStart, rayDirection * raycastDistance, Color.red);
 
         if (hit.collider != null && isGrounded)
         {
@@ -96,7 +102,8 @@ public class GruntScript : MonoBehaviour
         else 
             direction = Vector3.left;
 
-        GameObject bullet = Instantiate(BulletPrefab, transform.position + direction * 0.5f, Quaternion.identity);
+        float bulletOffset = 0.5f * Mathf.Max(enemyScale.x, enemyScale.y);
+        GameObject bullet = Instantiate(BulletPrefab, transform.position + direction * bulletOffset, Quaternion.identity);
         float bulletScale = (enemyScale.x + enemyScale.y) / 2;
         bullet.transform.localScale = new Vector3(bulletScale, bulletScale, 1);
         bullet.GetComponent<BulletScript>().SetDirection(direction);
@@ -118,8 +125,6 @@ public class GruntScript : MonoBehaviour
         rb2d.velocity = Vector2.zero;
         rb2d.isKinematic = true;
         GetComponent<Collider2D>().enabled = false;
-        
-        // Destruir el objeto después de que termine la animación
         Destroy(gameObject, animator.GetCurrentAnimatorStateInfo(0).length);
     }
 }

@@ -4,83 +4,100 @@ public class JohnMovement : MonoBehaviour
 {
     public GameObject BulletPrefab;
     private Rigidbody2D Rigidbody2D;
-    public int collectedItems = 0; // Contador de objetos recolectados
-    public event System.Action<int> OnItemCollected; // Evento para notificar cuando se recoge un objeto
+    public int collectedItems = 0;
+    public event System.Action<int> OnItemCollected;
     private float Horizontal;
     public float Speed;
     public float JumpForce;
     private bool Grounded;
-    private int jumpCount = 0;  // Contador de saltos
-    public int maxJumps = 1;    // Máximo número de saltos permitidos
-    //Parte 3
+    private int jumpCount = 0;
+    public int maxJumps = 1;
     private Animator Animator;
-    
-    private float LastShoot; //Para calcular el tiempo del ultimo disparo
+    private float LastShoot;
     public int health = 5;
-    public int maxHealth = 5;   // Vida máxima
-    private float healTimer = 0f; // Temporizador para la curación
-    private float healInterval = 3f; // Intervalo de curación en segundos
+    public int maxHealth = 5;
+    private float healTimer = 0f;
+    private float healInterval = 3f;
+    
+    // Nuevas variables para el control de la caída
+    public float fallThreshold = -1.017f;
+    public float resetYPosition = -0.627f;
 
     void Start()
     {
         Rigidbody2D = GetComponent<Rigidbody2D>();
         Animator = GetComponent<Animator>();
-        health = maxHealth; // Iniciamos con vida completa
-        gameObject.tag = "Player";  // Añadir esta línea
+        health = maxHealth;
+        gameObject.tag = "Player";
     }
 
     void Update()
     {
+        // Verificar si el jugador cayó por debajo del límite
+        if (transform.position.y < fallThreshold)
+        {
+            ResetPosition();
+        }
+
         // Sistema de curación automática
         healTimer += Time.deltaTime;
         if (healTimer >= healInterval)
         {
-            healTimer = 0f; // Reinicia el temporizador
-            Heal(); // Cura al personaje
+            healTimer = 0f;
+            Heal();
         }
 
         Horizontal = Input.GetAxis("Horizontal");
 
-        if(Horizontal <0.0f) transform.localScale = new Vector3(-1.0f, 1.0f, 1.0f);
-        else if(Horizontal > 0.0f) transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+        if (Horizontal < 0.0f) transform.localScale = new Vector3(-1.0f, 1.0f, 1.0f);
+        else if (Horizontal > 0.0f) transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
 
-        Animator.SetBool("running", Horizontal!=0.0f);
+        Animator.SetBool("running", Horizontal != 0.0f);
 
         Debug.DrawRay(transform.position, Vector3.down * 0.1f, Color.red);
-        if(Physics2D.Raycast(transform.position, Vector3.down, 0.1f))
+        if (Physics2D.Raycast(transform.position, Vector3.down, 0.1f))
         {
             Grounded = true;
-            jumpCount = 0; // Reiniciamos el contador cuando tocamos el suelo
+            jumpCount = 0;
         }
-        else 
+        else
         {
             Grounded = false;
         }
 
-        // Permitimos saltar si aún tenemos saltos disponibles
         if (Input.GetKeyDown(KeyCode.W) && jumpCount < maxJumps)
         {
             Jump();
-            jumpCount++; // Incrementamos el contador de saltos
+            jumpCount++;
         }
-        if (Input.GetKey(KeyCode.Space) && Time.time > LastShoot + 0.25f){
+        if (Input.GetKey(KeyCode.Space) && Time.time > LastShoot + 0.25f)
+        {
             Shoot();
             LastShoot = Time.time;
         }
     }
 
-    private void Shoot(){
+    private void ResetPosition()
+    {
+        Vector3 newPosition = transform.position;
+        newPosition.y = resetYPosition;
+        transform.position = newPosition;
+        Rigidbody2D.velocity = Vector2.zero;
+    }
+
+    private void Shoot()
+    {
         Vector3 direction;
         if (transform.localScale.x == 1.0f) direction = Vector2.right;
         else direction = Vector2.left;
-        GameObject bullet = Instantiate(BulletPrefab, transform.position + direction *0.1f, quaternion.identity);
+        GameObject bullet = Instantiate(BulletPrefab, transform.position + direction * 0.1f, quaternion.identity);
         bullet.GetComponent<BulletScript>().SetDirection(direction);
     }
 
     private void Jump()
     {
-        Rigidbody2D.velocity = new Vector2(Rigidbody2D.velocity.x, 0); // Opcional: resetea la velocidad vertical
-        Rigidbody2D.AddForce(Vector2.up * JumpForce); 
+        Rigidbody2D.velocity = new Vector2(Rigidbody2D.velocity.x, 0);
+        Rigidbody2D.AddForce(Vector2.up * JumpForce);
     }
 
     private void FixedUpdate()
@@ -88,28 +105,35 @@ public class JohnMovement : MonoBehaviour
         Rigidbody2D.velocity = new Vector2(Horizontal * Speed, Rigidbody2D.velocity.y);
     }
 
-    // Nuevo método para curar
     private void Heal()
     {
         if (health < maxHealth)
         {
             health = maxHealth;
-            Debug.Log("¡Curación completa!"); // Opcional: para debug
+            Debug.Log("¡Curación completa!");
         }
     }
 
-    public void Hit(){
+    public void Hit()
+    {
         health--;
-        if(health <= 0)
+        if (health <= 0)
         {
             Destroy(gameObject);
         }
     }
+
     public void CollectItem(int value)
     {
         collectedItems += value;
-        // Disparar el evento
         OnItemCollected?.Invoke(collectedItems);
+
+        Timer timer = FindObjectOfType<Timer>();
+        if (timer != null)
+        {
+            timer.AumentarTiempo();
+        }
+
         Debug.Log($"Items Collected: {collectedItems}");
     }
 }

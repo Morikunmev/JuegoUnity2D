@@ -38,7 +38,7 @@ public class BulletScript : MonoBehaviour
         {
             john.Hit();
         }
-        if (grunt != null)
+        if (grunt != null && grunt.gameObject != transform.parent)
         {
             grunt.Hit();
         }
