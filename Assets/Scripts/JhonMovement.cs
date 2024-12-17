@@ -4,6 +4,8 @@ public class JohnMovement : MonoBehaviour
 {
     public GameObject BulletPrefab;
     private Rigidbody2D Rigidbody2D;
+    public int collectedItems = 0; // Contador de objetos recolectados
+    public event System.Action<int> OnItemCollected; // Evento para notificar cuando se recoge un objeto
     private float Horizontal;
     public float Speed;
     public float JumpForce;
@@ -24,6 +26,7 @@ public class JohnMovement : MonoBehaviour
         Rigidbody2D = GetComponent<Rigidbody2D>();
         Animator = GetComponent<Animator>();
         health = maxHealth; // Iniciamos con vida completa
+        gameObject.tag = "Player";  // Añadir esta línea
     }
 
     void Update()
@@ -101,5 +104,12 @@ public class JohnMovement : MonoBehaviour
         {
             Destroy(gameObject);
         }
+    }
+    public void CollectItem(int value)
+    {
+        collectedItems += value;
+        // Disparar el evento
+        OnItemCollected?.Invoke(collectedItems);
+        Debug.Log($"Items Collected: {collectedItems}");
     }
 }
